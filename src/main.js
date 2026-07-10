@@ -1,24 +1,28 @@
 import './style.css'
 import { loadTasks, saveTasks } from './storage/taskStorage.js'
+import {
+    createTask,
+    deleteTask as removeTask,
+    filterTasks,
+    getNextTaskId,
+    getTaskStats,
+    isValidTaskText,
+    toggleTask as toggleTaskInService
+} from './services/taskService.js'
 
 let tasks = [];
-let taskId = 1;
 let currentFilter = 'all';
 
 
 window.onload = function() {
     tasks = loadTasks();
-
-    if (tasks.length > 0) {
-        taskId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-    }
     
     document.getElementById('addBtn').onclick = addTask;
     
     let filterButtons = document.querySelectorAll('.filter-btn');
     for (let i = 0; i < filterButtons.length; i++) {
         filterButtons[i].onclick = function() {
-            filterTasks(this.getAttribute('data-filter'));
+            setCurrentFilter(this.getAttribute('data-filter'));
         };
     }
     
@@ -36,21 +40,16 @@ function addTask() {
     let input = document.getElementById('taskInput');
     let text = input.value;
     
-    if (text == '') {
+    if (!isValidTaskText(text)) {
         alert('Por favor escribe una tarea');
         return;
     }
-    
 
-    let newTask = {
-        id: taskId++,
-        text: text,
-        completed: false,
-        createdAt: new Date().toISOString()
-    };
-    
+    const nextTaskId = getNextTaskId(tasks);
+    const newTask = createTask(text, nextTaskId);
+
     tasks.push(newTask);
-        saveTasks(tasks);
+    saveTasks(tasks);
     
     input.value = '';
     
@@ -63,16 +62,7 @@ function renderTasks() {
     let taskList = document.getElementById('taskList');
     taskList.innerHTML = ''; 
 
-    let filteredTasks = tasks;
-    if (currentFilter == 'active') {
-        filteredTasks = tasks.filter(function(task) {
-            return !task.completed;
-        });
-    } else if (currentFilter == 'completed') {
-        filteredTasks = tasks.filter(function(task) {
-            return task.completed;
-        });
-    }
+    let filteredTasks = filterTasks(tasks, currentFilter);
     
 
     for (let i = 0; i < filteredTasks.length; i++) {
@@ -113,13 +103,7 @@ function renderTasks() {
 }
 
 function toggleTask(id) {
-    for (let i = 0; i < tasks.length; i++) {
-        if (tasks[i].id == id) {
-            tasks[i].completed = !tasks[i].completed;
-            break;
-        }
-    }
-    
+    tasks = toggleTaskInService(tasks, id);
     saveTasks(tasks);
     
     renderTasks();
@@ -127,20 +111,14 @@ function toggleTask(id) {
 }
 
 function deleteTask(id) {
-    let newTasks = [];
-    for (let i = 0; i < tasks.length; i++) {
-        if (tasks[i].id != id) {
-            newTasks.push(tasks[i]);
-        }
-    }
-    tasks = newTasks;
+    tasks = removeTask(tasks, id);
     saveTasks(tasks);
     
     renderTasks();
     updateStats();
 }
 
-function filterTasks(filter) {
+function setCurrentFilter(filter) {
     currentFilter = filter;
     
     let buttons = document.querySelectorAll('.filter-btn');
@@ -160,18 +138,8 @@ function filterTasks(filter) {
 }
 
 function updateStats() {
-    let total = tasks.length;
-    let completed = 0;
-    let active = 0;
-    
-    for (let i = 0; i < tasks.length; i++) {
-        if (tasks[i].completed) {
-            completed++;
-        } else {
-            active++;
-        }
-    }
+    const stats = getTaskStats(tasks);
     
     let statsDiv = document.getElementById('stats');
-    statsDiv.innerHTML = 'Total: ' + total + ' | Completadas: ' + completed + ' | Activas: ' + active;
+    statsDiv.innerHTML = 'Total: ' + stats.total + ' | Completadas: ' + stats.completed + ' | Activas: ' + stats.active;
 }
