@@ -1,4 +1,5 @@
 import './style.css'
+import { loadTasks, saveTasks } from './storage/taskStorage.js'
 
 let tasks = [];
 let taskId = 1;
@@ -6,10 +7,9 @@ let currentFilter = 'all';
 
 
 window.onload = function() {
-    let savedTasks = localStorage.getItem('tasks');
+    tasks = loadTasks();
 
-    if (savedTasks) {
-        tasks = JSON.parse(savedTasks);
+    if (tasks.length > 0) {
         taskId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
     }
     
@@ -50,7 +50,7 @@ function addTask() {
     };
     
     tasks.push(newTask);
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+        saveTasks(tasks);
     
     input.value = '';
     
@@ -120,7 +120,7 @@ function toggleTask(id) {
         }
     }
     
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    saveTasks(tasks);
     
     renderTasks();
     updateStats();
@@ -134,7 +134,7 @@ function deleteTask(id) {
         }
     }
     tasks = newTasks;
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    saveTasks(tasks);
     
     renderTasks();
     updateStats();
