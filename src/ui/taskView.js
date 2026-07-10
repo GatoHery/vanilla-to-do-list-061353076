@@ -1,8 +1,10 @@
+import { filterTasks, getTaskStats } from '../services/taskService.js'
+
 export function renderTasks(tasks, currentFilter, onToggleTask, onDeleteTask) {
   const taskList = document.getElementById('taskList');
   taskList.innerHTML = '';
 
-  const filteredTasks = getFilteredTasks(tasks, currentFilter);
+  const filteredTasks = filterTasks(tasks, currentFilter);
 
   for (let i = 0; i < filteredTasks.length; i++) {
     const task = filteredTasks[i];
@@ -38,12 +40,10 @@ export function renderTasks(tasks, currentFilter, onToggleTask, onDeleteTask) {
 }
 
 export function updateStats(tasks) {
-  const total = tasks.length;
-  const completed = tasks.filter((task) => task.completed).length;
-  const active = total - completed;
+  const stats = getTaskStats(tasks);
 
   const statsDiv = document.getElementById('stats');
-  statsDiv.innerHTML = 'Total: ' + total + ' | Completadas: ' + completed + ' | Activas: ' + active;
+  statsDiv.innerHTML = 'Total: ' + stats.total + ' | Completadas: ' + stats.completed + ' | Activas: ' + stats.active;
 }
 
 export function setActiveFilterButton(filter) {
@@ -60,16 +60,4 @@ export function setActiveFilterButton(filter) {
   } else {
     buttons[2].classList.add('active');
   }
-}
-
-function getFilteredTasks(tasks, currentFilter) {
-  if (currentFilter === 'active') {
-    return tasks.filter((task) => !task.completed);
-  }
-
-  if (currentFilter === 'completed') {
-    return tasks.filter((task) => task.completed);
-  }
-
-  return tasks;
 }
